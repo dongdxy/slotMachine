@@ -2,6 +2,7 @@ package com.dxy.android.slotmachine;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Toast;
@@ -14,6 +15,7 @@ public class Main extends Activity {
 	RollControll mRoll1;
 	RollControll mRoll2;
 	RollControll mRoll3;
+	Handler mHandler = new Handler();
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -31,12 +33,7 @@ public class Main extends Activity {
 				startRoll();
 			}
 		});
-	}
 
-	private void startRoll() {
-		mRoll1.start(800, 2);
-		mRoll2.start(1000, 2);
-		mRoll3.start(1200, 2);
 		mRoll3.setOnStop(new StopListener() {
 
 			@Override
@@ -45,6 +42,13 @@ public class Main extends Activity {
 						.show();
 			}
 		});
+	}
+
+	private void startRoll() {
+		mRoll1.start(1000, 2);
+		mRoll2.start(1100, 2);
+		mRoll3.start(1200, 2);
+
 	}
 
 }

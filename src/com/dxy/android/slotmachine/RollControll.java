@@ -2,14 +2,16 @@ package com.dxy.android.slotmachine;
 
 import android.os.Handler;
 import android.view.animation.Animation;
+import android.view.animation.AnticipateInterpolator;
+import android.view.animation.BounceInterpolator;
+import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
-import android.view.animation.OvershootInterpolator;
 import android.view.animation.TranslateAnimation;
 import android.widget.ViewFlipper;
 
 public class RollControll {
 	private static final int FLIP_DISTANCE = 100;
-	private static final int VELOCITY = 20;
+	private static final int VELOCITY = 18;
 
 	private ViewFlipper mViewFlipper;
 	private int mSpeed;
@@ -20,6 +22,7 @@ public class RollControll {
 	private boolean mAnimating = false;
 	private boolean mLastAnimation = false;
 	private Handler mHandler;
+	private int mRollCounts;
 
 	public interface StopListener {
 		void onStop();
@@ -62,6 +65,7 @@ public class RollControll {
 		mLastAnimation = false;
 		mVelocity = VELOCITY;
 		mTargetPosition = stopPosition;
+		mRollCounts = 0;
 		roll();
 	}
 
@@ -69,6 +73,7 @@ public class RollControll {
 		calculateSpeedAndDuration();
 
 		animateFlip();
+		mRollCounts++;
 
 		if (!mLastAnimation) {
 			mHandler.postDelayed(mRollNext, mDuration - 10);
@@ -83,17 +88,28 @@ public class RollControll {
 		}
 	}
 
+	private Interpolator mStartInterpolator = new AnticipateInterpolator();
+	private Interpolator mMiddleInterpolator = new LinearInterpolator();
+	private Interpolator mEndInterpolator = new BounceInterpolator();
+
 	private void animateFlip() {
 		Animation in = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f,
 				Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, mSpeed < 0 ? 1.0f
 						: -1.0f, Animation.RELATIVE_TO_PARENT, 0.0f);
-		in.setInterpolator(!mLastAnimation ? new LinearInterpolator() : new OvershootInterpolator());
+		Interpolator interpolator = mMiddleInterpolator;
+		if (mRollCounts == 0) {
+			interpolator = mStartInterpolator;
+		}
+		if (mLastAnimation) {
+			interpolator = mEndInterpolator;
+		}
+
+		in.setInterpolator(interpolator);
 		in.setDuration(mDuration);
 		Animation out = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f,
 				Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f,
 				Animation.RELATIVE_TO_PARENT, mSpeed < 0 ? -1.0f : 1.0f);
-		out.setInterpolator(!mLastAnimation ? new LinearInterpolator()
-				: new OvershootInterpolator());
+		out.setInterpolator(interpolator);
 		out.setDuration(mDuration);
 		mViewFlipper.clearAnimation();
 		mViewFlipper.setInAnimation(in);
@@ -129,6 +145,9 @@ public class RollControll {
 		} else {
 			mDuration = 1000;
 		}
+		if (mRollCounts == 0) {
+			mDuration = 1000;
+		}
 	}
 
 	private void decelerate() {
@@ -141,11 +160,14 @@ public class RollControll {
 
 	private void stopOnNext() {
 		mLastAnimation = true;
-		mDuration = 1500;
+		mDuration = 600;
 	}
 
 	private boolean shouldStop() {
-		return mDuration >= 450;
+		if (mRollCounts == 0) {
+			return false;
+		}
+		return mDuration >= 500;
 	}
 
 	private void onStop() {
